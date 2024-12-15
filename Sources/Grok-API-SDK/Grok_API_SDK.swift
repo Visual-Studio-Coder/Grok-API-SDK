@@ -1,5 +1,8 @@
 import Foundation
 
+// Import the ChatCompletion models
+import Grok_API_SDK
+
 public enum GrokAPIError: Error, LocalizedError {
     case invalidResponse
     case httpError(Int)
@@ -78,5 +81,53 @@ public class GrokAPI {
     
     public func listModels(completion: @escaping (Result<ModelList, Error>) -> Void) {
         fetchData(endpoint: "models", responseType: ModelList.self, completion: completion)
+    }
+    
+    public func createChatCompletion(request: ChatCompletionRequest, completion: @escaping (Result<ChatCompletionResponse, Error>) -> Void) {
+        let url = baseURL.appendingPathComponent("chat/completions")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            urlRequest.httpBody = try JSONEncoder().encode(request)
+        } catch {
+            completion(.failure(GrokAPIError.custom("Failed to encode request body: \(error.localizedDescription)")))
+            return
+        }
+        
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            if let error = error {
+                completion(.failure(GrokAPIError.custom(error.localizedDescription)))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(GrokAPIError.invalidResponse))
+                return
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(GrokAPIError.httpError(httpResponse.statusCode)))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(GrokAPIError.noData))
+                return
+            }
+            
+            // Print the raw response data for debugging
+            print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
+                completion(.success(decodedResponse))
+            } catch {
+                completion(.failure(GrokAPIError.decodingError(error)))
+            }
+        }
+        task.resume()
     }
 }
