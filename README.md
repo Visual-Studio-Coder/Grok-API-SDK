@@ -108,6 +108,177 @@ api.createChatCompletion(request: request) { result in
 }
 ```
 
+### Create Chat Completion with Function Calling
+
+You can create a chat completion with function calling using the `createChatCompletionWithFunctionCallAsync` method. This method requires a `ChatCompletionRequest` object, a list of `Function` objects, and a completion handler:
+
+```swift
+let messages = [
+    ChatMessage(role: "system", content: "You are a helpful assistant that can search the web."),
+    ChatMessage(role: "user", content: "Can you find the latest news about AI?")
+]
+
+let functions: [Function] = [
+    Function(
+        type: "function",
+        function: FunctionDefinition(
+            name: "get_current_weather",
+            description: "Get the current weather in a given location",
+            parameters: FunctionParameters(
+                type: "object",
+                properties: [
+                    "location": FunctionParameter(
+                        type: "string",
+                        description: "The city and state, e.g. San Francisco, CA",
+                        exampleValue: "San Francisco, CA"
+                    ),
+                    "unit": FunctionParameter(
+                        type: "string",
+                        description: "The unit of temperature, e.g. celsius or fahrenheit",
+                        exampleValue: "celsius"
+                    )
+                ],
+                required: ["location"],
+                optional: ["unit"]
+            )
+        )
+    )
+]
+
+let request = ChatCompletionRequest(
+    model: "grok-beta",
+    messages: messages,
+    frequencyPenalty: nil,
+    logitBias: nil,
+    logprobs: nil,
+    maxTokens: 150,
+    n: nil,
+    presencePenalty: nil,
+    responseFormat: nil,
+    seed: nil,
+    stop: nil,
+    stream: nil,
+    temperature: 0.7,
+    toolChoice: "auto",
+    tools: functions.map { $0.function.name },
+    topLogprobs: nil,
+    topP: nil,
+    user: nil
+)
+
+Task {
+    do {
+        try await api.createChatCompletionWithFunctionCallAsync(request: request, tools: functions) { result in
+            switch result {
+            case .success(let response):
+                print("Chat Completion Response: \(response)")
+            case .failure(let error):
+                print("Error: \(error.localizedDescription)")
+            }
+        }
+    } catch {
+        print("Error: \(error.localizedDescription)")
+    }
+}
+```
+
+#### Understanding `ToolCall`
+
+`ToolCall` represents a function call made by the assistant during the chat completion process. It encapsulates the details of the function to be executed, including its name and arguments. This enables the assistant to perform actions like calculations, fetching weather data, or any other predefined operations seamlessly within the conversation.
+
+#### Example Usage
+
+```swift
+let messages = [
+    ChatMessage(role: "system", content: "You are a helpful assistant that can perform calculations."),
+    ChatMessage(role: "user", content: "What is 5027 * 3032? Use the calculator tool.")
+]
+
+let functions: [Function] = [
+    Function(
+        type: "function",
+        function: FunctionDefinition(
+            name: "calculator",
+            parameters: FunctionParameters(
+                type: "object",
+                properties: [
+                    "a": FunctionParameter(
+                        type: "number",
+                        description: "The first operand",
+                        exampleValue: "5027"
+                    ),
+                    "b": FunctionParameter(
+                        type: "number",
+                        description: "The second operand",
+                        exampleValue: "3032"
+                    )
+                ],
+                required: ["a", "b"],
+                optional: nil
+            )
+        )
+    )
+]
+
+let request = ChatCompletionRequest(
+    model: "grok-beta",
+    messages: messages,
+    frequencyPenalty: nil,
+    logitBias: nil,
+    logprobs: nil,
+    maxTokens: 150,
+    n: nil,
+    presencePenalty: nil,
+    responseFormat: nil,
+    seed: nil,
+    stop: nil,
+    stream: nil,
+    temperature: 0.7,
+    toolChoice: "auto",
+    tools: functions.map { $0.function.name },
+    topLogprobs: nil,
+    topP: nil,
+    user: nil
+)
+
+Task {
+    do {
+        let response = try await api.createChatCompletionWithFunctionCallAsync(request: request, tools: functions)
+        print("Chat Completion Response: \(response)")
+    } catch {
+        print("Error: \(error.localizedDescription)")
+    }
+}
+```
+
+#### How It Works
+
+1. **Define Functions**: Specify the functions that the assistant can call. In this example, a `calculator` function is defined with two parameters, `a` and `b`.
+
+2. **Create Request**: Construct a `ChatCompletionRequest` with the desired messages and include the functions that the assistant can utilize.
+
+3. **Handle Response**: The assistant may respond by calling one of the predefined functions (`ToolCall`). You can then execute the function and provide the result back to the assistant to continue the conversation.
+
+4. **Using `ToolCall`**: The `ToolCall` object contains the function name and arguments. After executing the function, append the result to the conversation to receive the final response from the assistant.
+
+#### Example Workflow
+
+1. **User Input**: "What is 5027 * 3032? Use the calculator tool."
+
+2. **Assistant's Response**: The assistant recognizes the need to perform a calculation and issues a `ToolCall` for the `calculator` function with the provided operands.
+
+3. **Execute Function**: Your application executes the `calculator` function using the provided arguments.
+
+4. **Append Result**: Add the calculation result to the messages and send another `ChatCompletionRequest` to get the assistant's final response.
+
+5. **Final Response**: The assistant provides the computed result to the user.
+
+#### Benefits of Using `ToolCall`
+
+- **Flexibility**: Easily extend the assistant's capabilities by defining new functions as needed.
+- **Modularity**: Keep business logic separate from the assistant's responses, making the codebase cleaner and more maintainable.
+- **Enhanced User Experience**: Provide dynamic and accurate responses by leveraging custom functions tailored to your application's needs.
+
 ## Error Handling
 
 The SDK provides detailed error messages to help you understand any issues that arise. Errors are returned as instances of the `GrokAPIError` enum, which conforms to the `LocalizedError` protocol:

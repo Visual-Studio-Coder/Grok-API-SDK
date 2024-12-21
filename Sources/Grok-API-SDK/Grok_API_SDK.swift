@@ -1,4 +1,5 @@
 import Foundation
+import CFNetwork // Add this import
 
 // Import the ChatCompletion models
 import Grok_API_SDK
@@ -28,8 +29,8 @@ public enum GrokAPIError: Error, LocalizedError {
 
 public class GrokAPI {
     private let baseURL = URL(string: "https://api.x.ai/v1")!
-    private let session: URLSession
-    private let apiKey: String
+    public let session: URLSession
+    public let apiKey: String
     
     public init(apiKey: String, session: URLSession = .shared) {
         self.apiKey = apiKey
@@ -63,7 +64,13 @@ public class GrokAPI {
             }
             
             // Print the raw response data for debugging
-            print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+               let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+               let prettyString = String(data: prettyData, encoding: .utf8) {
+                print("Raw response data:\n\(prettyString)")
+            } else {
+                print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(responseType, from: data)
@@ -119,7 +126,13 @@ public class GrokAPI {
             }
             
             // Print the raw response data for debugging
-            print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+               let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+               let prettyString = String(data: prettyData, encoding: .utf8) {
+                print("Raw response data:\n\(prettyString)")
+            } else {
+                print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
@@ -129,5 +142,67 @@ public class GrokAPI {
             }
         }
         task.resume()
+    }
+    
+    public func createChatCompletionWithFunctionCallAsync(
+        request: ChatCompletionRequest,
+        tools: [Tool]
+    ) async throws -> ChatCompletionResponse {
+        let url = baseURL.appendingPathComponent("chat/completions")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        var requestWithTools = request
+        requestWithTools.tools = tools
+        
+        do {
+            urlRequest.httpBody = try JSONEncoder().encode(requestWithTools)
+        } catch {
+            throw GrokAPIError.custom("Failed to encode request body: \(error.localizedDescription)")
+        }
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // Print the raw response data for debugging
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+               let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+               let prettyString = String(data: prettyData, encoding: .utf8) {
+                print("Raw response data:\n\(prettyString)")
+            } else {
+                print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw GrokAPIError.invalidResponse
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                throw GrokAPIError.httpError(httpResponse.statusCode)
+            }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
+                return decodedResponse
+            } catch {
+                // **Enhance Error Logging for Missing Fields**
+                if let decodingError = error as? DecodingError {
+                    switch decodingError {
+                    case .keyNotFound(let key, let context):
+                        print("Missing key: \(key) in \(context.debugDescription)")
+                    default:
+                        break
+                    }
+                }
+                throw GrokAPIError.decodingError(error)
+            }
+        } catch {
+            if let urlError = error as? URLError, let data = urlError.userInfo[NSURLErrorFailingURLStringErrorKey] as? Data {
+                print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+            }
+            throw GrokAPIError.custom(error.localizedDescription)
+        }
     }
 }

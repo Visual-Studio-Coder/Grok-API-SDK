@@ -7,3 +7,4 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 Tests/Grok-API-SDKTests/Grok_API_SDKTests.swift
+Tests/GrokAPITests/Grok-API-SDKTests.swift

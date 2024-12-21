@@ -1,11 +1,34 @@
 import Foundation
 
-public struct ChatMessage: Codable {
+public struct ChatMessage: Codable, Sendable {
     let role: String
     let content: String
+    let toolCalls: [ToolCall]? // Ensure ToolCall is defined only once in FunctionCall.swift
+
+    init(role: String, content: String, toolCalls: [ToolCall]? = nil) {
+        self.role = role
+        self.content = content
+        self.toolCalls = toolCalls
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case role
+        case content
+        case toolCalls = "tool_calls"
+    }
 }
 
-public struct ChatCompletionRequest: Codable {
+public struct Tool: Codable, Sendable {
+    let type: String
+    let name: String
+    let description: String
+    let parameters: FunctionParameters
+    let function: FunctionDefinition
+}
+
+// Removed duplicate ToolCall struct as it's defined in FunctionCall.swift
+
+public struct ChatCompletionRequest: Codable, Sendable {
     let model: String
     let messages: [ChatMessage]
     let frequencyPenalty: Double?
@@ -20,7 +43,7 @@ public struct ChatCompletionRequest: Codable {
     let stream: Bool?
     let temperature: Double?
     let toolChoice: String?
-    let tools: [String]?
+    var tools: [Tool]?
     let topLogprobs: Int?
     let topP: Double?
     let user: String?
@@ -47,7 +70,7 @@ public struct ChatCompletionRequest: Codable {
     }
 }
 
-public struct ChatCompletionResponse: Codable {
+public struct ChatCompletionResponse: Codable, Sendable {
     let id: String
     let object: String
     let created: Int
@@ -67,7 +90,7 @@ public struct ChatCompletionResponse: Codable {
     }
 }
 
-public struct ChatChoice: Codable {
+public struct ChatChoice: Codable, Sendable {
     let index: Int
     let message: ChatMessage
     let finishReason: String?
@@ -79,7 +102,7 @@ public struct ChatChoice: Codable {
     }
 }
 
-public struct Usage: Codable {
+public struct Usage: Codable, Sendable {
     let promptTokens: Int
     let completionTokens: Int
     let totalTokens: Int
