@@ -110,7 +110,7 @@ api.createChatCompletion(request: request) { result in
 
 ### Create Chat Completion with Function Calling
 
-You can create a chat completion with function calling using the `createChatCompletionWithFunctionCallAsync` method. This method requires a `ChatCompletionRequest` object, a list of `Function` objects, and a completion handler:
+You can create a chat completion with function calling using the `createChatCompletionWithFunctionCallAsync` method. This method allows the assistant to call predefined functions to perform specific tasks:
 
 ```swift
 let messages = [
@@ -251,33 +251,171 @@ Task {
 }
 ```
 
+#### Full Example: Calculator Tool Use Case
+
+Below is a comprehensive example demonstrating how to use the `calculator` tool with function calling in the Grok API Swift SDK.
+
+```swift
+import Grok_API_SDK
+
+// Initialize the GrokAPI with your API key
+let apiKey = "your_api_key_here"
+let api = GrokAPI(apiKey: apiKey)
+
+// Define the messages for the conversation
+let messages = [
+    ChatMessage(role: "system", content: "You are a helpful assistant that can perform calculations."),
+    ChatMessage(role: "user", content: "What is 5027 * 3032? Use the calculator tool.")
+]
+
+// Define the calculator function
+let calculatorFunction = Function(
+    type: "function",
+    name: "calculator",
+    description: "Performs basic arithmetic operations",
+    parameters: FunctionParameters(
+        type: "object",
+        properties: [
+            "a": FunctionParameter(
+                type: "number",
+                description: "The first operand",
+                exampleValue: "5027"
+            ),
+            "b": FunctionParameter(
+                type: "number",
+                description: "The second operand",
+                exampleValue: "3032"
+            )
+        ],
+        required: ["a", "b"],
+        optional: nil
+    )
+)
+
+// Create the chat completion request with the calculator tool
+let request = ChatCompletionRequest(
+    model: "grok-beta",
+    messages: messages,
+    maxTokens: 150,
+    temperature: 0.7,
+    toolChoice: "auto",
+    tools: [calculatorFunction.name]
+)
+
+// Execute the chat completion with function calling
+Task {
+    do {
+        let response = try await api.createChatCompletionWithFunctionCallAsync(request: request, tools: [calculatorFunction])
+        print("Chat Completion Response: \(response)")
+        
+        // Handle the tool call
+        if let toolCalls = response.choices.first?.message.toolCalls {
+            for toolCall in toolCalls {
+                let functionName = toolCall.function.name
+                guard let functionArgs = try? JSONDecoder().decode([String: Int].self, from: Data(toolCall.function.arguments?.utf8 ?? "".utf8)) else {
+                    print("Failed to decode function arguments.")
+                    continue
+                }
+                
+                // Define the tools map
+                let toolsMap: [String: ([String: Int]) -> [String: Int]] = [
+                    "calculator": { args in
+                        if let a = args["a"], let b = args["b"] {
+                            return ["result": a * b]
+                        }
+                        return ["result": 0]
+                    }
+                ]
+                
+                // Execute the appropriate tool function
+                if let toolFunction = toolsMap[functionName] {
+                    let result = toolFunction(functionArgs)
+                    
+                    // Append the result to the messages
+                    messages.append(
+                        ChatMessage(
+                            role: "tool",
+                            content: String(data: try! JSONEncoder().encode(result), encoding: .utf8)!,
+                            toolCalls: nil
+                        )
+                    )
+                } else {
+                    print("No tool function found for name: \(functionName)")
+                }
+            }
+            
+            // Send the updated messages back to the assistant
+            let finalRequest = ChatCompletionRequest(
+                model: "grok-beta",
+                messages: messages,
+                maxTokens: 150,
+                temperature: 0.7
+            )
+            
+            let finalResponse = try await api.createChatCompletionWithFunctionCallAsync(request: finalRequest, tools: [calculatorFunction])
+            print("Final Chat Completion Response: \(finalResponse)")
+            print("Final response content: \(finalResponse.choices.first?.message.content ?? "No content")")
+            
+            // Extract and assert the numerical result
+            if let content = finalResponse.choices.first?.message.content {
+                let pattern = "\\b\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?\\b"
+                let regex = try? NSRegularExpression(pattern: pattern, options: [])
+                let range = NSRange(location: 0, length: content.utf16.count)
+                if let match = regex?.firstMatch(in: content, options: [], range: range),
+                   let matchRange = Range(match.range, in: content) {
+                    let numberString = String(content[matchRange]).replacingOccurrences(of: ",", with: "")
+                    if let number = Int(numberString) {
+                        XCTAssertEqual(number, 5027 * 3032, "Calculator tool did not compute the correct result.")
+                    } else {
+                        XCTFail("Failed to parse numeric result from response content.")
+                    }
+                } else {
+                    XCTFail("No numeric result found in response content.")
+                }
+            } else {
+                XCTFail("Response content is nil.")
+            }
+        }
+    } catch {
+        print("Error: \(error.localizedDescription)")
+    }
+}
+```
+
+**Explanation of the Example:**
+
+1. **Initialize GrokAPI**: Start by initializing the `GrokAPI` class with your API key.
+
+2. **Define Messages**: Create a conversation where the user asks the assistant to perform a multiplication using the calculator tool.
+
+3. **Define the Calculator Function**: Specify the `calculator` function with its parameters `a` and `b`.
+
+4. **Create the Request**: Construct a `ChatCompletionRequest` that includes the model, messages, and the `calculator` tool.
+
+5. **Execute the Request**: Call `createChatCompletionWithFunctionCallAsync` with the request and tools.
+
+6. **Handle the Tool Call**:
+    - **Decode Arguments**: Extract and decode the arguments passed to the `calculator` function.
+    - **Execute Calculation**: Perform the multiplication and obtain the result.
+    - **Append Result**: Add the calculation result back to the conversation messages.
+
+7. **Finalize the Response**: Send the updated messages back to the assistant to receive the final response containing the computed result.
+
+8. **Validate the Result**: Use a regular expression to extract the numerical result from the assistant's response and assert its correctness.
+
 #### How It Works
 
 1. **Define Functions**: Specify the functions that the assistant can call. In this example, a `calculator` function is defined with two parameters, `a` and `b`.
 
-2. **Create Request**: Construct a `ChatCompletionRequest` with the desired messages and include the functions that the assistant can utilize.
+2. **Create Request**: Construct a `ChatCompletionRequest` with the desired messages and include the `calculator` function in the `tools` array.
 
-3. **Handle Response**: The assistant may respond by calling one of the predefined functions (`ToolCall`). You can then execute the function and provide the result back to the assistant to continue the conversation.
+3. **Handle Response**: The assistant responds by calling the `calculator` function with the provided arguments.
 
-4. **Using `ToolCall`**: The `ToolCall` object contains the function name and arguments. After executing the function, append the result to the conversation to receive the final response from the assistant.
+4. **Execute Function**: Your application executes the `calculator` function using the provided arguments (`a` and `b`), performing the multiplication.
 
-#### Example Workflow
+5. **Append Result**: Add the calculation result to the conversation messages and send another `ChatCompletionRequest` to get the assistant's final response.
 
-1. **User Input**: "What is 5027 * 3032? Use the calculator tool."
-
-2. **Assistant's Response**: The assistant recognizes the need to perform a calculation and issues a `ToolCall` for the `calculator` function with the provided operands.
-
-3. **Execute Function**: Your application executes the `calculator` function using the provided arguments.
-
-4. **Append Result**: Add the calculation result to the messages and send another `ChatCompletionRequest` to get the assistant's final response.
-
-5. **Final Response**: The assistant provides the computed result to the user.
-
-#### Benefits of Using `ToolCall`
-
-- **Flexibility**: Easily extend the assistant's capabilities by defining new functions as needed.
-- **Modularity**: Keep business logic separate from the assistant's responses, making the codebase cleaner and more maintainable.
-- **Enhanced User Experience**: Provide dynamic and accurate responses by leveraging custom functions tailored to your application's needs.
+6. **Final Response**: The assistant provides the computed result to the user, completing the conversation.
 
 ## Error Handling
 
@@ -307,6 +445,38 @@ public enum GrokAPIError: Error, LocalizedError {
     }
 }
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Invalid API Key**
+   - **Symptoms**: Receiving `HTTP Error: 401` or similar authentication errors.
+   - **Solution**: Ensure that your API key is correct and has the necessary permissions. You can verify your API key using the `getAPIKeyInfo` method.
+
+2. **Decoding Errors**
+   - **Symptoms**: Errors related to JSON decoding, such as missing keys or type mismatches.
+   - **Solution**: 
+     - Verify that the API response structure matches the models defined in the SDK.
+     - Ensure that all required parameters are provided in function calls.
+     - Check for updates in the API that might introduce new fields or change existing ones.
+
+3. **Network Connectivity Issues**
+   - **Symptoms**: Timeouts or inability to reach the API server.
+   - **Solution**: 
+     - Check your internet connection.
+     - Ensure that there are no firewalls or proxies blocking the requests.
+     - Retry the request after some time in case of temporary server issues.
+
+4. **Missing Function Definitions**
+   - **Symptoms**: The assistant attempts to call a function that is not defined or provided in the `tools` list.
+   - **Solution**: 
+     - Ensure that all required functions are defined and included in the `tools` array when making the `ChatCompletionRequest`.
+     - Verify the function parameters and their types are correctly specified.
+
+### Getting Help
+
+If you encounter issues not covered in this section, please open an issue on the [GitHub repository](https://github.com/your-repo/Grok-API-SDK) or contact the maintainer directly.
 
 ## Contributing
 
