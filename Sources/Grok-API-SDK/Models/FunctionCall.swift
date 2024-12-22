@@ -61,14 +61,14 @@ public struct Function: Codable, Sendable {
 
 public struct ToolCall: Codable, Sendable {
     let id: String
-    let function: FunctionDefinition
-    let type: String // Ensure 'type' is included as per JSON
+    let function: FunctionCallDetails
+    let index: Int
+    let type: String
+}
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case function
-        case type
-    }
+public struct FunctionCallDetails: Codable, Sendable {
+    let name: String
+    let arguments: String
 }
 
 public struct ToolCallResponse: Codable, Sendable {

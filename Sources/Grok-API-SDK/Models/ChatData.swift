@@ -7,7 +7,7 @@ public struct ChatMessage: Codable, Sendable {
 
     init(role: String, content: String, toolCalls: [ToolCall]? = nil) {
         self.role = role
-        self.content = content
+        self.content = content // Fixed 'this' to 'self'
         self.toolCalls = toolCalls
     }
 
@@ -40,7 +40,7 @@ public struct ChatCompletionRequest: Codable, Sendable {
     let responseFormat: String?
     let seed: Int?
     let stop: [String]?
-    let stream: Bool?
+    var stream: Bool? // Changed from 'let' to 'var' to allow assignment
     let temperature: Double?
     let toolChoice: String?
     var tools: [Tool]?
@@ -111,5 +111,45 @@ public struct Usage: Codable, Sendable {
         case promptTokens = "prompt_tokens"
         case completionTokens = "completion_tokens"
         case totalTokens = "total_tokens"
+    }
+}
+
+public struct ChatCompletionChunk: Codable, Sendable {
+    let id: String
+    let object: String
+    let created: Int
+    let model: String
+    let choices: [ChatChunkChoice]
+    let usage: Usage?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case object
+        case created
+        case model
+        case choices
+        case usage
+    }
+}
+
+public struct ChatChunkChoice: Codable, Sendable {
+    let index: Int
+    let delta: ChatDelta?
+    let finishReason: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case index
+        case delta
+        case finishReason = "finish_reason"
+    }
+}
+
+public struct ChatDelta: Codable, Sendable {
+    let role: String?
+    let content: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case role
+        case content
     }
 }

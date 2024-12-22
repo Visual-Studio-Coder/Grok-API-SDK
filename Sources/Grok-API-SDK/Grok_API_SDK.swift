@@ -1,8 +1,8 @@
 import Foundation
 import CFNetwork // Add this import
 
-// Import the ChatCompletion models
-import Grok_API_SDK
+// Ensure that the Models module is imported if it's separate
+// import Models
 
 public enum GrokAPIError: Error, LocalizedError {
     case invalidResponse
@@ -37,7 +37,7 @@ public class GrokAPI {
         self.session = session
     }
     
-    public func fetchData<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
+    internal func fetchData<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -203,6 +203,104 @@ public class GrokAPI {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
             }
             throw GrokAPIError.custom(error.localizedDescription)
+        }
+    }
+    
+    // Updated streaming method to yield partial content strings
+    public func createChatCompletionStream(request: ChatCompletionRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            let url = baseURL.appendingPathComponent("chat/completions")
+            var urlRequest = URLRequest(url: url)
+            urlRequest.httpMethod = "POST"
+            urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            var requestWithTools = request
+            requestWithTools.stream = true
+            requestWithTools.tools = request.tools // Ensure tools are included if any
+            
+            do {
+                urlRequest.httpBody = try JSONEncoder().encode(requestWithTools)
+            } catch {
+                continuation.finish(throwing: GrokAPIError.custom("Failed to encode request body: \(error.localizedDescription)"))
+                return
+            }
+            
+            let task = session.dataTask(with: urlRequest) { data, response, error in
+                if let error = error {
+                    continuation.finish(throwing: GrokAPIError.custom(error.localizedDescription))
+                    return
+                }
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    continuation.finish(throwing: GrokAPIError.invalidResponse)
+                    return
+                }
+                
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    // Print the raw error response
+                    if let data = data {
+                        if let eventString = String(data: data, encoding: .utf8) {
+                            print("Error Response (\(httpResponse.statusCode)):\n\(eventString)") // Enhanced logging
+                        } else {
+                            print("Error Response (\(httpResponse.statusCode)): Unable to parse response data.")
+                        }
+                    } else {
+                        print("Error Response (\(httpResponse.statusCode)): No data received.")
+                    }
+                    continuation.finish(throwing: GrokAPIError.httpError(httpResponse.statusCode))
+                    return
+                }
+                
+                guard let data = data else {
+                    continuation.finish(throwing: GrokAPIError.noData)
+                    return
+                }
+                
+                // Handle SSE parsing with enhanced logging and yield partial content
+                if let eventString = String(data: data, encoding: .utf8) {
+                    let events = eventString.components(separatedBy: "\n\n")
+                    for event in events {
+                        if event.starts(with: "data: ") {
+                            let rawEvent = event.replacingOccurrences(of: "data: ", with: "")
+                            print("Raw event received:\n\(rawEvent)") // Print raw event
+                            
+                            if rawEvent == "[DONE]" {
+                                print("Stream ended with [DONE].")
+                                continuation.finish()
+                                return
+                            }
+                            
+                            guard let jsonData = rawEvent.data(using: .utf8) else {
+                                print("Failed to convert event string to Data.")
+                                continue
+                            }
+                            
+                            do {
+                                let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: jsonData)
+                                if let delta = chunk.choices.first?.delta, let content = delta.content { // { Unwrap delta safely }
+                                    continuation.yield(content)
+                                }
+                            } catch {
+                                print("Decoding error for event:\n\(rawEvent)\nError: \(error.localizedDescription)") // Enhanced error logging
+                                continuation.finish(throwing: GrokAPIError.decodingError(error))
+                                return
+                            }
+                        }
+                    }
+                } else {
+                    print("Unable to convert data to String for SSE parsing.")
+                    continuation.finish(throwing: GrokAPIError.custom("Failed to parse streamed data as string."))
+                }
+                
+                continuation.finish()
+            }
+            task.resume()
+            
+            // Handle cancellation
+            continuation.onTermination = { @Sendable termination in
+                task.cancel()
+            }
         }
     }
 }

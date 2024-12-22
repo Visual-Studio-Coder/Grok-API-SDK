@@ -397,9 +397,9 @@ Task {
 6. **Handle the Tool Call**:
     - **Decode Arguments**: Extract and decode the arguments passed to the `calculator` function.
     - **Execute Calculation**: Perform the multiplication and obtain the result.
-    - **Append Result**: Add the calculation result back to the conversation messages.
+    - **Append Result**: Add the calculation result back to the conversation messages and send another `ChatCompletionRequest` to get the assistant's final response.
 
-7. **Finalize the Response**: Send the updated messages back to the assistant to receive the final response containing the computed result.
+7. **Finalize the Response**: The assistant provides the computed result to the user, completing the conversation.
 
 8. **Validate the Result**: Use a regular expression to extract the numerical result from the assistant's response and assert its correctness.
 
@@ -416,6 +416,118 @@ Task {
 5. **Append Result**: Add the calculation result to the conversation messages and send another `ChatCompletionRequest` to get the assistant's final response.
 
 6. **Final Response**: The assistant provides the computed result to the user, completing the conversation.
+
+## Streaming Chat Completions
+
+To provide a seamless and interactive user experience, the Grok API Swift SDK supports streaming responses. This allows you to receive partial results in real-time as the model generates content, similar to how the Gemini API handles streaming.
+
+### Benefits of Streaming
+
+- **Real-Time Feedback**: Receive responses incrementally as they are generated.
+- **Enhanced User Experience**: Enable interactive applications where users can see responses build in real-time.
+- **Efficient Resource Usage**: Stream data reduces the need to wait for the entire response before processing.
+
+### Implementing Streaming
+
+The following example demonstrates how to implement streaming using the `createChatCompletionStream` method to generate text from a text-only input prompt.
+
+```swift
+import Grok_API_SDK
+
+// Initialize GrokAPI with your API key
+let apiKey = "your_api_key_here"
+let api = GrokAPI(apiKey: apiKey)
+
+// Define the messages for the conversation
+let messages = [
+    ChatMessage(role: "system", content: "You are a helpful assistant that can perform calculations."),
+    ChatMessage(role: "user", content: "What is 5027 * 3032? Use the calculator tool.")
+]
+
+// Define the calculator function
+let calculatorFunction = Function(
+    type: "function",
+    name: "calculator",
+    description: "Performs basic arithmetic operations",
+    parameters: FunctionParameters(
+        type: "object",
+        properties: [
+            "a": FunctionParameter(
+                type: "number",
+                description: "The first operand",
+                exampleValue: "5027"
+            ),
+            "b": FunctionParameter(
+                type: "number",
+                description: "The second operand",
+                exampleValue: "3032"
+            )
+        ],
+        required: ["a", "b"],
+        optional: nil
+    )
+)
+
+// Create the chat completion request with streaming enabled
+let request = ChatCompletionRequest(
+    model: "grok-beta",
+    messages: messages,
+    maxTokens: 150,
+    temperature: 0.7,
+    stream: true,
+    toolChoice: "auto",
+    tools: [calculatorFunction.name]
+)
+
+// Execute the chat completion with streaming
+Task {
+    do {
+        var finalResponseContent: String = ""
+        
+        for try await chunk in api.createChatCompletionStream(request: request) {
+            print(chunk, terminator: "") // Print partial content
+            finalResponseContent += chunk
+        }
+        
+        print("\nFinal response content: \(finalResponseContent)")
+        
+        // Validate the result
+        XCTAssertEqual(finalResponseContent.trimmingCharacters(in: .whitespacesAndNewlines), "15189824", "Calculator tool did not compute the correct result.")
+        
+    } catch {
+        print("Error: \(error.localizedDescription)")
+    }
+}
+```
+
+### Explanation of the Example:
+
+1. **Initialize GrokAPI**: Start by initializing the `GrokAPI` class with your API key.
+
+2. **Define Messages**: Create a conversation where the user requests a multiplication operation using the calculator tool.
+
+3. **Define the Calculator Function**: Specify the `calculator` function with its parameters `a` and `b`.
+
+4. **Create the Request**: Construct a `ChatCompletionRequest` with streaming enabled by setting `stream: true`.
+
+5. **Execute the Request**: Call `createChatCompletionStream` to receive a stream of partial `content` strings.
+
+6. **Handle the Streaming Response**:
+    - Iterate over each `String` chunk received from the stream.
+    - Print each partial `content` as it arrives, providing real-time feedback.
+    - Accumulate the content to form the final response.
+
+7. **Validate the Result**: After the stream completes, assert that the final accumulated response matches the expected multiplication result.
+
+### Additional Notes
+
+- **Handling Partial Responses**: The streaming method yields each partial `content` string as the model generates it. This allows you to display or process the response incrementally.
+
+- **Error Handling**: Ensure that your application gracefully handles any errors that may occur during streaming, such as network interruptions or unexpected data formats.
+
+- **Customization**: You can customize the streaming behavior by adjusting parameters like `maxTokens`, `temperature`, and the functions included in the `tools` array.
+
+By following this approach, users of your SDK can effectively utilize the streaming capabilities, providing a responsive and interactive experience similar to the Gemini API.
 
 ## Error Handling
 
