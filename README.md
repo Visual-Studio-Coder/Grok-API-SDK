@@ -40,12 +40,12 @@ let package = Package(
 
 ### Initialization
 
-First, initialize the `GrokAPI` class with your API key:
+First, initialize the `GrokAPI` class with your API key. It is recommended to use environment variables to manage your API keys securely:
 
 ```swift
 import Grok_API_SDK
 
-let apiKey = "your_api_key_here"
+let apiKey = ProcessInfo.processInfo.environment["GROK_API_KEY"] ?? "your_api_key_here"
 let api = GrokAPI(apiKey: apiKey)
 ```
 

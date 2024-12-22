@@ -196,7 +196,7 @@ public class GrokAPI {
                 fflush(stdout) // Ensure the output is flushed
             } else {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
-                fflush(stdout) // Ensure the output is flushed
+                fflush(stdout) // Ensure that the output is flushed
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
