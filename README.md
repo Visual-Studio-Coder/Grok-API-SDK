@@ -249,7 +249,7 @@ public enum GrokAPIError: Error, LocalizedError {
 
 ### Getting Help
 
-If you encounter issues not covered in this section, please open an issue on the [GitHub repository](https://github.com/your-repo/Grok-API-SDK) or contact the maintainer directly.
+If you encounter issues not covered in this section, please open an issue on the [GitHub repository](https://github.com/Visual-Studio-Coder/Grok-API-SDK) or contact the maintainer directly.
 
 ## Contributing
 
