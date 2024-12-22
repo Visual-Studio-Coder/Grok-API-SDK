@@ -1,8 +1,5 @@
 import Foundation
-import CFNetwork // Add this import
-
-// Ensure that the Models module is imported if it's separate
-// import Models
+import CFNetwork
 
 public enum GrokAPIError: Error, LocalizedError {
     case invalidResponse
