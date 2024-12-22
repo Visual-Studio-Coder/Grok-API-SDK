@@ -6,6 +6,4 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
-Tests/Grok-API-SDKTests/Grok-API-SDKTests.swift
 .swiftpm/xcode/xcshareddata/xcschemes/Grok-API-SDK.xcscheme
-Tests/Grok-API-SDKTests/Grok-API-SDKTests.swift
