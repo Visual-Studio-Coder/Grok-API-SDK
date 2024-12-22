@@ -5,7 +5,7 @@ public struct Model: Codable {
     let created: Int
     let object: String
     let ownedBy: String
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case created

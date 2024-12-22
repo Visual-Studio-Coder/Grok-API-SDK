@@ -1,6 +1,6 @@
-//import Foundation
+// import Foundation
 //
-//public enum GrokAPIError: Error, LocalizedError {
+// public enum GrokAPIError: Error, LocalizedError {
 //    case invalidResponse
 //    case httpError(Int)
 //    case noData
@@ -21,4 +21,4 @@
 //            return message
 //        }
 //    }
-//}
+// }

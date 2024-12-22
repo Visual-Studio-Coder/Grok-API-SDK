@@ -13,7 +13,7 @@ public struct APIKeyInfo: Codable {
     let teamBlocked: Bool
     let apiKeyBlocked: Bool
     let apiKeyDisabled: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case redactedApiKey = "redacted_api_key"
         case userId = "user_id"

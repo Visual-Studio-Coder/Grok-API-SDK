@@ -47,7 +47,7 @@ public struct ChatCompletionRequest: Codable, Sendable {
     let topLogprobs: Int?
     let topP: Double?
     let user: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case model
         case messages
@@ -78,7 +78,7 @@ public struct ChatCompletionResponse: Codable, Sendable {
     let choices: [ChatChoice]
     let systemFingerprint: String
     let usage: Usage?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case object
@@ -94,7 +94,7 @@ public struct ChatChoice: Codable, Sendable {
     let index: Int
     let message: ChatMessage
     let finishReason: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case index
         case message
@@ -106,7 +106,7 @@ public struct Usage: Codable, Sendable {
     let promptTokens: Int
     let completionTokens: Int
     let totalTokens: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case promptTokens = "prompt_tokens"
         case completionTokens = "completion_tokens"
@@ -121,7 +121,7 @@ public struct ChatCompletionChunk: Codable, Sendable {
     let model: String
     let choices: [ChatChunkChoice]
     let usage: Usage?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case object
@@ -136,7 +136,7 @@ public struct ChatChunkChoice: Codable, Sendable {
     let index: Int
     let delta: ChatDelta?
     let finishReason: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case index
         case delta
@@ -147,7 +147,7 @@ public struct ChatChunkChoice: Codable, Sendable {
 public struct ChatDelta: Codable, Sendable {
     let role: String?
     let content: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case role
         case content
@@ -157,7 +157,7 @@ public struct ChatDelta: Codable, Sendable {
 public struct ResponseFormat: Codable, Sendable {
     let type: String
     let jsonSchema: JSONSchema
-    
+
     enum CodingKeys: String, CodingKey {
         case type
         case jsonSchema = "json_schema"
@@ -168,7 +168,7 @@ public struct JSONSchema: Codable, Sendable {
     let name: String
     let schema: SchemaDetails
     let strict: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case name
         case schema
@@ -181,7 +181,7 @@ public struct SchemaDetails: Codable, Sendable {
     let properties: [String: SchemaProperty]
     let required: [String]
     let additionalProperties: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case type
         case properties
