@@ -178,6 +178,52 @@ Task {
 }
 ```
 
+### Structured Output
+
+The Grok API Swift SDK supports structured outputs, allowing you to define the expected format of the response using JSON Schema. This ensures that the response adheres to a specific structure, making it easier to parse and use in your application.
+
+```swift
+let messages = [
+    ChatMessage(role: "system", content: "You are an assistant helping the user rate movies."),
+    ChatMessage(role: "user", content: "What is the rating of Star Wars?")
+]
+
+let schemaProperties: [String: SchemaProperty] = [
+    "title": SchemaProperty(type: "string", description: nil),
+    "rating": SchemaProperty(type: "number", description: "The rating of the movie, typically out of 10"),
+    "summary": SchemaProperty(type: "string", description: nil)
+]
+
+let request = ChatCompletionRequest(
+    model: "grok-2-1212",
+    messages: messages,
+    maxTokens: 150,
+    temperature: 0.7,
+    responseFormat: ResponseFormat(
+        type: "json_schema",
+        jsonSchema: JSONSchema(
+            name: "movie_response",
+            schema: SchemaDetails(
+                type: "object",
+                properties: schemaProperties,
+                required: ["title", "rating", "summary"],
+                additionalProperties: false
+            ),
+            strict: true
+        )
+    )
+)
+
+api.createChatCompletion(request: request) { result in
+    switch result {
+    case .success(let response):
+        print("Structured Output Response: \(response)")
+    case .failure(let error):
+        print("Error: \(error.localizedDescription)")
+    }
+}
+```
+
 ## Error Handling
 
 The SDK provides detailed error messages to help you understand any issues that arise. Errors are returned as instances of the `GrokAPIError` enum, which conforms to the `LocalizedError` protocol:
@@ -217,12 +263,14 @@ public enum GrokAPIError: Error, LocalizedError {
 
 <details>
 <summary>Invalid API Key</summary>
+
 **Symptoms**: Receiving `HTTP Error: 401` or similar authentication errors.  
 **Solution**: Ensure that your API key is correct and has the necessary permissions. You can verify your API key using the `getAPIKeyInfo` method.
 </details>
 
 <details>
 <summary>Decoding Errors</summary>
+
 **Symptoms**: Errors related to JSON decoding, such as missing keys or type mismatches.  
 **Solution**: 
 - Verify that the API response structure matches the models defined in the SDK.
@@ -232,6 +280,7 @@ public enum GrokAPIError: Error, LocalizedError {
 
 <details>
 <summary>Network Connectivity Issues</summary>
+
 **Symptoms**: Timeouts or inability to reach the API server.  
 **Solution**: 
 - Check your internet connection.
@@ -241,6 +290,7 @@ public enum GrokAPIError: Error, LocalizedError {
 
 <details>
 <summary>Missing Function Definitions</summary>
+
 **Symptoms**: The assistant attempts to call a function that is not defined or provided in the `tools` list.  
 **Solution**: 
 - Ensure that all required functions are defined and included in the `tools` array when making the `ChatCompletionRequest`.
