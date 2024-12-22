@@ -6,7 +6,7 @@ import CFNetwork // Add this import
 
 public enum GrokAPIError: Error, LocalizedError {
     case invalidResponse
-    case httpError(Int)
+    case httpError(Int, Data?)
     case noData
     case decodingError(Error)
     case custom(String)
@@ -15,8 +15,12 @@ public enum GrokAPIError: Error, LocalizedError {
         switch self {
         case .invalidResponse:
             return "Invalid response from the server."
-        case .httpError(let statusCode):
-            return "HTTP Error: \(statusCode). Please check your API key and endpoint."
+        case .httpError(let statusCode, let data):
+            if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                return "HTTP Error: \(statusCode). Response: \(responseString)"
+            } else {
+                return "HTTP Error: \(statusCode). Please check your API key and endpoint."
+            }
         case .noData:
             return "No data received from the server."
         case .decodingError(let error):
@@ -54,7 +58,10 @@ public class GrokAPI {
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(GrokAPIError.httpError(httpResponse.statusCode)))
+                if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                    print("HTTP Error Response: \(responseString)")
+                }
+                completion(.failure(GrokAPIError.httpError(httpResponse.statusCode, data)))
                 return
             }
             
@@ -68,8 +75,10 @@ public class GrokAPI {
                let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                let prettyString = String(data: prettyData, encoding: .utf8) {
                 print("Raw response data:\n\(prettyString)")
+                fflush(stdout) // Ensure the output is flushed
             } else {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                fflush(stdout) // Ensure the output is flushed
             }
             
             do {
@@ -98,7 +107,13 @@ public class GrokAPI {
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            urlRequest.httpBody = try JSONEncoder().encode(request)
+            // Print the request being sent
+            let encodedRequest = try JSONEncoder().encode(request)
+            if let requestString = String(data: encodedRequest, encoding: .utf8) {
+                print("Request body:\n\(requestString)")
+                fflush(stdout) // Ensure logs are flushed
+            }
+            urlRequest.httpBody = encodedRequest
         } catch {
             completion(.failure(GrokAPIError.custom("Failed to encode request body: \(error.localizedDescription)")))
             return
@@ -116,7 +131,10 @@ public class GrokAPI {
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(GrokAPIError.httpError(httpResponse.statusCode)))
+                if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                    print("HTTP Error Response: \(responseString)")
+                }
+                completion(.failure(GrokAPIError.httpError(httpResponse.statusCode, data)))
                 return
             }
             
@@ -130,12 +148,16 @@ public class GrokAPI {
                let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                let prettyString = String(data: prettyData, encoding: .utf8) {
                 print("Raw response data:\n\(prettyString)")
+                fflush(stdout) // Ensure the output is flushed
             } else {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                fflush(stdout) // Ensure the output is flushed
             }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
+                print("Decoded response: \(decodedResponse)")
+                fflush(stdout) // Ensure the output is flushed
                 completion(.success(decodedResponse))
             } catch {
                 completion(.failure(GrokAPIError.decodingError(error)))
@@ -171,8 +193,10 @@ public class GrokAPI {
                let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                let prettyString = String(data: prettyData, encoding: .utf8) {
                 print("Raw response data:\n\(prettyString)")
+                fflush(stdout) // Ensure the output is flushed
             } else {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                fflush(stdout) // Ensure the output is flushed
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -180,11 +204,17 @@ public class GrokAPI {
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
-                throw GrokAPIError.httpError(httpResponse.statusCode)
+                let responseString = String(data: data, encoding: .utf8)
+                if let responseString = responseString {
+                    print("HTTP Error Response: \(responseString)")
+                }
+                throw GrokAPIError.httpError(httpResponse.statusCode, data)
             }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
+                print("Decoded response: \(decodedResponse)")
+                fflush(stdout) // Ensure the output is flushed
                 return decodedResponse
             } catch {
                 // **Enhance Error Logging for Missing Fields**
@@ -201,6 +231,7 @@ public class GrokAPI {
         } catch {
             if let urlError = error as? URLError, let data = urlError.userInfo[NSURLErrorFailingURLStringErrorKey] as? Data {
                 print("Raw response data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                fflush(stdout) // Ensure the output is flushed
             }
             throw GrokAPIError.custom(error.localizedDescription)
         }
@@ -239,16 +270,10 @@ public class GrokAPI {
                 
                 guard (200...299).contains(httpResponse.statusCode) else {
                     // Print the raw error response
-                    if let data = data {
-                        if let eventString = String(data: data, encoding: .utf8) {
-                            print("Error Response (\(httpResponse.statusCode)):\n\(eventString)") // Enhanced logging
-                        } else {
-                            print("Error Response (\(httpResponse.statusCode)): Unable to parse response data.")
-                        }
-                    } else {
-                        print("Error Response (\(httpResponse.statusCode)): No data received.")
+                    if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                        print("HTTP Error Response: \(responseString)")
                     }
-                    continuation.finish(throwing: GrokAPIError.httpError(httpResponse.statusCode))
+                    continuation.finish(throwing: GrokAPIError.httpError(httpResponse.statusCode, data))
                     return
                 }
                 
@@ -264,25 +289,29 @@ public class GrokAPI {
                         if event.starts(with: "data: ") {
                             let rawEvent = event.replacingOccurrences(of: "data: ", with: "")
                             print("Raw event received:\n\(rawEvent)") // Print raw event
+                            fflush(stdout) // Ensure the output is flushed
                             
                             if rawEvent == "[DONE]" {
                                 print("Stream ended with [DONE].")
+                                fflush(stdout) // Ensure the output is flushed
                                 continuation.finish()
                                 return
                             }
                             
                             guard let jsonData = rawEvent.data(using: .utf8) else {
                                 print("Failed to convert event string to Data.")
+                                fflush(stdout) // Ensure the output is flushed
                                 continue
                             }
                             
                             do {
                                 let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: jsonData)
-                                if let delta = chunk.choices.first?.delta, let content = delta.content { // { Unwrap delta safely }
+                                if let delta = chunk.choices.first?.delta, let content = delta.content { // Unwrap delta safely
                                     continuation.yield(content)
                                 }
                             } catch {
                                 print("Decoding error for event:\n\(rawEvent)\nError: \(error.localizedDescription)") // Enhanced error logging
+                                fflush(stdout) // Ensure the output is flushed
                                 continuation.finish(throwing: GrokAPIError.decodingError(error))
                                 return
                             }
@@ -290,6 +319,7 @@ public class GrokAPI {
                     }
                 } else {
                     print("Unable to convert data to String for SSE parsing.")
+                    fflush(stdout) // Ensure the output is flushed
                     continuation.finish(throwing: GrokAPIError.custom("Failed to parse streamed data as string."))
                 }
                 

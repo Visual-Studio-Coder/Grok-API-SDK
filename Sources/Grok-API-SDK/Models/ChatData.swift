@@ -37,7 +37,7 @@ public struct ChatCompletionRequest: Codable, Sendable {
     let maxTokens: Int?
     let n: Int?
     let presencePenalty: Double?
-    let responseFormat: String?
+    let responseFormat: ResponseFormat? // Add responseFormat for structured outputs
     let seed: Int?
     let stop: [String]?
     var stream: Bool? // Changed from 'let' to 'var' to allow assignment
@@ -152,4 +152,45 @@ public struct ChatDelta: Codable, Sendable {
         case role
         case content
     }
+}
+
+public struct ResponseFormat: Codable, Sendable {
+    let type: String
+    let jsonSchema: JSONSchema
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case jsonSchema = "json_schema"
+    }
+}
+
+public struct JSONSchema: Codable, Sendable {
+    let name: String
+    let schema: SchemaDetails
+    let strict: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case name
+        case schema
+        case strict
+    }
+}
+
+public struct SchemaDetails: Codable, Sendable {
+    let type: String
+    let properties: [String: SchemaProperty]
+    let required: [String]
+    let additionalProperties: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case properties
+        case required
+        case additionalProperties = "additional_properties"
+    }
+}
+
+public struct SchemaProperty: Codable, Sendable {
+    let type: String
+    let description: String?
 }
