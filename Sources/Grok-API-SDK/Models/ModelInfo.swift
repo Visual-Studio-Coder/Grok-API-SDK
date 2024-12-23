@@ -1,10 +1,10 @@
 import Foundation
 
 public struct Model: Codable {
-    let id: String
-    let created: Int
-    let object: String
-    let ownedBy: String
+    public let id: String
+    public let created: Int
+    public let object: String
+    public let ownedBy: String
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -15,6 +15,6 @@ public struct Model: Codable {
 }
 
 public struct ModelList: Codable {
-    let data: [Model]
-    let object: String
+    public let data: [Model]
+    public let object: String
 }

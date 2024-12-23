@@ -8,16 +8,16 @@
 import Foundation
 
 public struct FunctionParameter: Codable, Sendable {
-    let type: String
-    let description: String
-    let exampleValue: String?
+    public let type: String
+    public let description: String
+    public let exampleValue: String?
 }
 
 public struct FunctionParameters: Codable, Sendable {
-    let type: String
-    let properties: [String: FunctionParameter]
-    let required: [String]
-    let optional: [String]?
+    public let type: String
+    public let properties: [String: FunctionParameter]
+    public let required: [String]
+    public let optional: [String]?
 
     init(type: String, properties: [String: FunctionParameter], required: [String], optional: [String]? = nil) {
         self.type = type
@@ -41,46 +41,46 @@ public struct FunctionParameters: Codable, Sendable {
 }
 
 public struct FunctionDefinition: Codable, Sendable {
-    let name: String
-    let parameters: FunctionParameters? // Re-added as optional to include in requests
-    let arguments: String? // Added to match the JSON response
+    public let name: String
+    public let parameters: FunctionParameters? // Re-added as optional to include in requests
+    public let arguments: String? // Added to match the JSON response
 
     // Remove the following properties as they are not present in the JSON response
     // let description: String
 }
 
 public struct Function: Codable, Sendable {
-    let type: String
-    let name: String
-    let parameters: FunctionParameters? // Re-added as optional
-    let arguments: String? // Added to match the JSON response
+    public let type: String
+    public let name: String
+    public let parameters: FunctionParameters? // Re-added as optional
+    public let arguments: String? // Added to match the JSON response
 
     // Remove the following property
     // let description: String
 }
 
 public struct ToolCall: Codable, Sendable {
-    let id: String
-    let function: FunctionCallDetails
-    let index: Int
-    let type: String
+    public let id: String
+    public let function: FunctionCallDetails
+    public let index: Int
+    public let type: String
 }
 
 public struct FunctionCallDetails: Codable, Sendable {
-    let name: String
-    let arguments: String
+    public let name: String
+    public let arguments: String
 }
 
 public struct ToolCallResponse: Codable, Sendable {
-    let choices: [ToolCallChoice]
+    public let choices: [ToolCallChoice]
 }
 
 public struct ToolCallChoice: Codable, Sendable {
-    let message: ToolCallMessage
+    public let message: ToolCallMessage
 }
 
 public struct ToolCallMessage: Codable, Sendable {
-    let toolCalls: [ToolCall]?
+    public let toolCalls: [ToolCall]?
 
     enum CodingKeys: String, CodingKey {
         case toolCalls = "tool_calls"

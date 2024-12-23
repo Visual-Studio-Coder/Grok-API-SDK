@@ -1,15 +1,15 @@
 import Foundation
 
 struct LanguageModel: Codable {
-    let completionTextTokenPrice: Int
-    let created: Int
-    let id: String
-    let inputModalities: [String]
-    let object: String
-    let outputModalities: [String]
-    let ownedBy: String
-    let promptImageTokenPrice: Int
-    let promptTextTokenPrice: Int
+    public let completionTextTokenPrice: Int
+    public let created: Int
+    public let id: String
+    public let inputModalities: [String]
+    public let object: String
+    public let outputModalities: [String]
+    public let ownedBy: String
+    public let promptImageTokenPrice: Int
+    public let promptTextTokenPrice: Int
 
     enum CodingKeys: String, CodingKey {
         case completionTextTokenPrice = "completion_text_token_price"

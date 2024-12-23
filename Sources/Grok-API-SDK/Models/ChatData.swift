@@ -1,9 +1,9 @@
 import Foundation
 
 public struct ChatMessage: Codable, Sendable {
-    let role: String
-    let content: String
-    let toolCalls: [ToolCall]? // Ensure ToolCall is defined only once in FunctionCall.swift
+    public let role: String
+    public let content: String
+    public let toolCalls: [ToolCall]? // Ensure ToolCall is defined only once in FunctionCall.swift
 
     init(role: String, content: String, toolCalls: [ToolCall]? = nil) {
         self.role = role
@@ -19,34 +19,34 @@ public struct ChatMessage: Codable, Sendable {
 }
 
 public struct Tool: Codable, Sendable {
-    let type: String
-    let name: String
-    let description: String
-    let parameters: FunctionParameters
-    let function: FunctionDefinition
+    public let type: String
+    public let name: String
+    public let description: String
+    public let parameters: FunctionParameters
+    public let function: FunctionDefinition
 }
 
 // Removed duplicate ToolCall struct as it's defined in FunctionCall.swift
 
 public struct ChatCompletionRequest: Codable, Sendable {
-    let model: String
-    let messages: [ChatMessage]
-    let frequencyPenalty: Double?
-    let logitBias: [String: Int]?
-    let logprobs: Bool?
-    let maxTokens: Int?
-    let n: Int?
-    let presencePenalty: Double?
-    let responseFormat: ResponseFormat? // Add responseFormat for structured outputs
-    let seed: Int?
-    let stop: [String]?
-    var stream: Bool? // Changed from 'let' to 'var' to allow assignment
-    let temperature: Double?
-    let toolChoice: String?
-    var tools: [Tool]?
-    let topLogprobs: Int?
-    let topP: Double?
-    let user: String?
+    public let model: String
+    public let messages: [ChatMessage]
+    public let frequencyPenalty: Double?
+    public let logitBias: [String: Int]?
+    public let logprobs: Bool?
+    public let maxTokens: Int?
+    public let n: Int?
+    public let presencePenalty: Double?
+    public let responseFormat: ResponseFormat? // Add responseFormat for structured outputs
+    public let seed: Int?
+    public let stop: [String]?
+    public var stream: Bool? // Changed from 'let' to 'var' to allow assignment
+    public let temperature: Double?
+    public let toolChoice: String?
+    public var tools: [Tool]?
+    public let topLogprobs: Int?
+    public let topP: Double?
+    public let user: String?
 
     enum CodingKeys: String, CodingKey {
         case model
@@ -71,13 +71,13 @@ public struct ChatCompletionRequest: Codable, Sendable {
 }
 
 public struct ChatCompletionResponse: Codable, Sendable {
-    let id: String
-    let object: String
-    let created: Int
-    let model: String
-    let choices: [ChatChoice]
-    let systemFingerprint: String
-    let usage: Usage?
+    public let id: String
+    public let object: String
+    public let created: Int
+    public let model: String
+    public let choices: [ChatChoice]
+    public let systemFingerprint: String
+    public let usage: Usage?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -91,9 +91,9 @@ public struct ChatCompletionResponse: Codable, Sendable {
 }
 
 public struct ChatChoice: Codable, Sendable {
-    let index: Int
-    let message: ChatMessage
-    let finishReason: String?
+    public let index: Int
+    public let message: ChatMessage
+    public let finishReason: String?
 
     enum CodingKeys: String, CodingKey {
         case index
@@ -103,9 +103,9 @@ public struct ChatChoice: Codable, Sendable {
 }
 
 public struct Usage: Codable, Sendable {
-    let promptTokens: Int
-    let completionTokens: Int
-    let totalTokens: Int
+    public let promptTokens: Int
+    public let completionTokens: Int
+    public let totalTokens: Int
 
     enum CodingKeys: String, CodingKey {
         case promptTokens = "prompt_tokens"
@@ -115,12 +115,12 @@ public struct Usage: Codable, Sendable {
 }
 
 public struct ChatCompletionChunk: Codable, Sendable {
-    let id: String
-    let object: String
-    let created: Int
-    let model: String
-    let choices: [ChatChunkChoice]
-    let usage: Usage?
+    public let id: String
+    public let object: String
+    public let created: Int
+    public let model: String
+    public let choices: [ChatChunkChoice]
+    public let usage: Usage?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -133,9 +133,9 @@ public struct ChatCompletionChunk: Codable, Sendable {
 }
 
 public struct ChatChunkChoice: Codable, Sendable {
-    let index: Int
-    let delta: ChatDelta?
-    let finishReason: String?
+    public let index: Int
+    public let delta: ChatDelta?
+    public let finishReason: String?
 
     enum CodingKeys: String, CodingKey {
         case index
@@ -145,8 +145,8 @@ public struct ChatChunkChoice: Codable, Sendable {
 }
 
 public struct ChatDelta: Codable, Sendable {
-    let role: String?
-    let content: String?
+    public let role: String?
+    public let content: String?
 
     enum CodingKeys: String, CodingKey {
         case role
@@ -155,8 +155,8 @@ public struct ChatDelta: Codable, Sendable {
 }
 
 public struct ResponseFormat: Codable, Sendable {
-    let type: String
-    let jsonSchema: JSONSchema
+    public let type: String
+    public let jsonSchema: JSONSchema
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -165,9 +165,9 @@ public struct ResponseFormat: Codable, Sendable {
 }
 
 public struct JSONSchema: Codable, Sendable {
-    let name: String
-    let schema: SchemaDetails
-    let strict: Bool
+    public let name: String
+    public let schema: SchemaDetails
+    public let strict: Bool
 
     enum CodingKeys: String, CodingKey {
         case name
@@ -177,10 +177,10 @@ public struct JSONSchema: Codable, Sendable {
 }
 
 public struct SchemaDetails: Codable, Sendable {
-    let type: String
-    let properties: [String: SchemaProperty]
-    let required: [String]
-    let additionalProperties: Bool
+    public let type: String
+    public let properties: [String: SchemaProperty]
+    public let required: [String]
+    public let additionalProperties: Bool
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -191,6 +191,6 @@ public struct SchemaDetails: Codable, Sendable {
 }
 
 public struct SchemaProperty: Codable, Sendable {
-    let type: String
-    let description: String?
+    public let type: String
+    public let description: String?
 }

@@ -1,18 +1,18 @@
 import Foundation
 
 public struct APIKeyInfo: Codable {
-    let redactedApiKey: String
-    let userId: String
-    let name: String
-    let createTime: String
-    let modifyTime: String?
-    let modifiedBy: String
-    let teamId: String
-    let acls: [String]
-    let apiKeyId: String
-    let teamBlocked: Bool
-    let apiKeyBlocked: Bool
-    let apiKeyDisabled: Bool
+    public let redactedApiKey: String
+    public let userId: String
+    public let name: String
+    public let createTime: String
+    public let modifyTime: String?
+    public let modifiedBy: String
+    public let teamId: String
+    public let acls: [String]
+    public let apiKeyId: String
+    public let teamBlocked: Bool
+    public let apiKeyBlocked: Bool
+    public let apiKeyDisabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case redactedApiKey = "redacted_api_key"
