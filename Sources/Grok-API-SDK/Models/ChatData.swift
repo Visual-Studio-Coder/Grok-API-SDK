@@ -242,11 +242,3 @@ public struct SchemaProperty: Codable, Sendable {
     public let type: String
     public let description: String?
 }
-
-public struct ToolCallMessage: Codable, Sendable {
-    public let toolCalls: [ToolCall]?
-
-    enum CodingKeys: String, CodingKey {
-        case toolCalls = "tool_calls"
-    }
-}
