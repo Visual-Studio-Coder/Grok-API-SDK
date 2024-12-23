@@ -80,7 +80,7 @@ public struct ToolCall: Codable, Sendable {
 
 public struct FunctionCallDetails: Codable, Sendable {
     public let name: String
-    public let arguments: [String: String]
+    public let arguments: [String: Any]
 
     // Custom decoding to handle JSON string for arguments
     public init(from decoder: Decoder) throws {
@@ -88,7 +88,7 @@ public struct FunctionCallDetails: Codable, Sendable {
         name = try container.decode(String.self, forKey: .name)
         let argumentsString = try container.decode(String.self, forKey: .arguments)
         if let data = argumentsString.data(using: .utf8),
-           let argumentsDict = try? JSONDecoder().decode([String: String].self, from: data) {
+           let argumentsDict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
             arguments = argumentsDict
         } else {
             arguments = [:]
@@ -99,7 +99,7 @@ public struct FunctionCallDetails: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
-        let argumentsData = try JSONEncoder().encode(arguments)
+        let argumentsData = try JSONSerialization.data(withJSONObject: arguments, options: [])
         let argumentsString = String(data: argumentsData, encoding: .utf8) ?? "{}"
         try container.encode(argumentsString, forKey: .arguments)
     }
