@@ -80,12 +80,33 @@ public struct ToolCall: Codable, Sendable {
 
 public struct FunctionCallDetails: Codable, Sendable {
     public let name: String
-    public let arguments: [String: String] // Change to dictionary to match JSON response
+    public let arguments: [String: String]
 
-    // Explicit public initializer
-    public init(name: String, arguments: [String: String]) {
-        self.name = name
-        self.arguments = arguments
+    // Custom decoding to handle JSON string for arguments
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        let argumentsString = try container.decode(String.self, forKey: .arguments)
+        if let data = argumentsString.data(using: .utf8),
+           let argumentsDict = try? JSONDecoder().decode([String: String].self, from: data) {
+            arguments = argumentsDict
+        } else {
+            arguments = [:]
+        }
+    }
+
+    // Custom encoding to handle JSON string for arguments
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        let argumentsData = try JSONEncoder().encode(arguments)
+        let argumentsString = String(data: argumentsData, encoding: .utf8) ?? "{}"
+        try container.encode(argumentsString, forKey: .arguments)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case arguments
     }
 }
 
