@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Grok-API-SDK",
     platforms: [
-        .iOS(.v12),
+        .iOS(.15),
         .macOS(.v12)
     ],
     products: [
