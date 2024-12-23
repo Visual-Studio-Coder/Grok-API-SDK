@@ -26,7 +26,8 @@ public struct FunctionParameters: Codable, Sendable {
     public let required: [String]
     public let optional: [String]?
 
-    init(type: String, properties: [String: FunctionParameter], required: [String], optional: [String]? = nil) {
+    // Explicit public initializer
+    public init(type: String, properties: [String: FunctionParameter], required: [String], optional: [String]? = nil) {
         self.type = type
         self.properties = properties
         self.required = required
@@ -34,7 +35,7 @@ public struct FunctionParameters: Codable, Sendable {
     }
 
     // Example initializer for calculator with "a" and "b"
-    static func calculatorParameters() -> FunctionParameters {
+    public static func calculatorParameters() -> FunctionParameters {
         return FunctionParameters(
             type: "object",
             properties: [
@@ -52,8 +53,12 @@ public struct FunctionDefinition: Codable, Sendable {
     public let parameters: FunctionParameters? // Re-added as optional to include in requests
     public let arguments: String? // Added to match the JSON response
 
-    // Remove the following properties as they are not present in the JSON response
-    // let description: String
+    // Explicit public initializer
+    public init(name: String, parameters: FunctionParameters? = nil, arguments: String? = nil) {
+        self.name = name
+        self.parameters = parameters
+        self.arguments = arguments
+    }
 }
 
 public struct Function: Codable, Sendable {
