@@ -80,7 +80,13 @@ public struct ToolCall: Codable, Sendable {
 
 public struct FunctionCallDetails: Codable, Sendable {
     public let name: String
-    public let arguments: String
+    public let arguments: [String: String] // Change to dictionary to match JSON response
+
+    // Explicit public initializer
+    public init(name: String, arguments: [String: String]) {
+        self.name = name
+        self.arguments = arguments
+    }
 }
 
 public struct ToolCallResponse: Codable, Sendable {
