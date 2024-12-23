@@ -5,9 +5,10 @@ public struct ChatMessage: Codable, Sendable {
     public let content: String
     public let toolCalls: [ToolCall]? // Ensure ToolCall is defined only once in FunctionCall.swift
 
-    init(role: String, content: String, toolCalls: [ToolCall]? = nil) {
+    // Explicit public initializer
+    public init(role: String, content: String, toolCalls: [ToolCall]? = nil) {
         self.role = role
-        self.content = content // Fixed 'this' to 'self'
+        self.content = content
         self.toolCalls = toolCalls
     }
 
