@@ -74,13 +74,13 @@ public struct Function: Codable, Sendable {
 public struct ToolCall: Codable, Sendable {
     public let id: String
     public let function: FunctionCallDetails
-    public let index: Int
+    public let index: Int? // Make index optional
     public let type: String
 }
 
 public struct FunctionCallDetails: Codable, Sendable {
     public let name: String
-    public let arguments: [String: Any]
+    public let arguments: [String: String]
 
     // Custom decoding to handle JSON string for arguments
     public init(from decoder: Decoder) throws {
@@ -88,7 +88,7 @@ public struct FunctionCallDetails: Codable, Sendable {
         name = try container.decode(String.self, forKey: .name)
         let argumentsString = try container.decode(String.self, forKey: .arguments)
         if let data = argumentsString.data(using: .utf8),
-           let argumentsDict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+           let argumentsDict = try? JSONDecoder().decode([String: String].self, from: data) {
             arguments = argumentsDict
         } else {
             arguments = [:]
@@ -99,7 +99,7 @@ public struct FunctionCallDetails: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
-        let argumentsData = try JSONSerialization.data(withJSONObject: arguments, options: [])
+        let argumentsData = try JSONEncoder().encode(arguments)
         let argumentsString = String(data: argumentsData, encoding: .utf8) ?? "{}"
         try container.encode(argumentsString, forKey: .arguments)
     }
