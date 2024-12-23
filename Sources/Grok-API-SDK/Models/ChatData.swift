@@ -25,8 +25,16 @@ public struct Tool: Codable, Sendable {
     public let description: String
     public let parameters: FunctionParameters
     public let function: FunctionDefinition
-}
 
+    // Explicit public initializer
+    public init(type: String, name: String, description: String, parameters: FunctionParameters, function: FunctionDefinition) {
+        self.type = type
+        self.name = name
+        self.description = description
+        self.parameters = parameters
+        self.function = function
+    }
+}
 // Removed duplicate ToolCall struct as it's defined in FunctionCall.swift
 
 public struct ChatCompletionRequest: Codable, Sendable {

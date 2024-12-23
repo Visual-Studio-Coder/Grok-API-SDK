@@ -11,6 +11,13 @@ public struct FunctionParameter: Codable, Sendable {
     public let type: String
     public let description: String
     public let exampleValue: String?
+
+    // Explicit public initializer
+    public init(type: String, description: String, exampleValue: String? = nil) {
+        self.type = type
+        self.description = description
+        self.exampleValue = exampleValue
+    }
 }
 
 public struct FunctionParameters: Codable, Sendable {
