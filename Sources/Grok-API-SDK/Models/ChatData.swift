@@ -37,16 +37,55 @@ public struct ChatCompletionRequest: Codable, Sendable {
     public let maxTokens: Int?
     public let n: Int?
     public let presencePenalty: Double?
-    public let responseFormat: ResponseFormat? // Add responseFormat for structured outputs
+    public let responseFormat: ResponseFormat?
     public let seed: Int?
     public let stop: [String]?
-    public var stream: Bool? // Changed from 'let' to 'var' to allow assignment
+    public var stream: Bool?
     public let temperature: Double?
     public let toolChoice: String?
     public var tools: [Tool]?
     public let topLogprobs: Int?
     public let topP: Double?
     public let user: String?
+
+    // Explicit initializer
+    public init(model: String,
+                messages: [ChatMessage],
+                frequencyPenalty: Double? = nil,
+                logitBias: [String: Int]? = nil,
+                logprobs: Bool? = nil,
+                maxTokens: Int? = nil,
+                n: Int? = nil,
+                presencePenalty: Double? = nil,
+                responseFormat: ResponseFormat? = nil,
+                seed: Int? = nil,
+                stop: [String]? = nil,
+                stream: Bool? = nil,
+                temperature: Double? = nil,
+                toolChoice: String? = nil,
+                tools: [Tool]? = nil,
+                topLogprobs: Int? = nil,
+                topP: Double? = nil,
+                user: String? = nil) {
+        self.model = model
+        self.messages = messages
+        self.frequencyPenalty = frequencyPenalty
+        self.logitBias = logitBias
+        self.logprobs = logprobs
+        self.maxTokens = maxTokens
+        self.n = n
+        self.presencePenalty = presencePenalty
+        self.responseFormat = responseFormat
+        self.seed = seed
+        self.stop = stop
+        self.stream = stream
+        self.temperature = temperature
+        self.toolChoice = toolChoice
+        self.tools = tools
+        self.topLogprobs = topLogprobs
+        self.topP = topP
+        self.user = user
+    }
 
     enum CodingKeys: String, CodingKey {
         case model
