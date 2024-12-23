@@ -38,7 +38,7 @@ public class GrokAPI {
         self.session = session
     }
 
-    internal func fetchData<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
+    public func fetchData<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
